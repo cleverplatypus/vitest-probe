@@ -1,0 +1,38 @@
+{
+  "name": "vitest-probe",
+  "version": "0.0.1",
+  "description": "A tree-shakable probe statement for vitest",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "publishConfig": {
+    "public": true
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib/"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "rimraf lib",
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run clean && npm run build",
+    "publish:npm": "npm run build && npm publish"
+  },
+  "author": "Nicola Dal Pont",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.6.3"
+  }
+}
