@@ -1,9 +1,10 @@
 {
   "name": "vitest-probe",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A tree-shakable probe statement for vitest",
   "type": "module",
-  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "browser": "./lib/browser.js",
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
