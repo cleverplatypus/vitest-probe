@@ -6,7 +6,7 @@ A tiny probe you can drop into your codebase to *observe internals in tests*—w
 * `getProbe({ … })` — in tests, get a scoped, timeout-safe stream of those emissions.
 * **Parallel-safe** via `AsyncLocalStorage`: each test can isolate its own scope with `probe.run(...)`.
 * **Zero prod overhead** when you define `__TEST__ = false` in your production build (DCE removes calls).
-
+* **Zero production dependencies** via the `probe-directive` plugin.
 ---
 
 ## Why?
@@ -24,12 +24,14 @@ This library gives you **assertion-like** tracepoints that:
 ## Install
 
 ```bash
-npm i -D vitest-probe
+npm i vitest-probe
 # or
-pnpm add -D vitest-probe
+pnpm add vitest-probe
 # or
-yarn add -D vitest-probe
+yarn add vitest-probe
 ```
+
+> Note: if you're going zero-dependency with [Zero dependencies](#zero-production-dependencies) approach, it's save to add `vitest-probe` as a dev dependency.
 
 > Requires **Node 16+** (uses `AsyncLocalStorage`). Designed for Vitest/Jest (Node env).
 
@@ -326,6 +328,60 @@ This package is written in TypeScript and ships types. You can narrow labels via
 
 ```ts
 const probe = getProbe<{ label: 'ast'|'done'; value: unknown }>()
+```
+
+## Zero production dependencies
+
+To avoid including `vitest-probe` in your production dependencies, you can use the `probe-directive` plugin to transform your code at build time.
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vitest/config'
+import { probeDirective } from 'vitest-probe/directive'
+
+export default defineConfig({
+  test: { environment: 'node' },
+  define: { __TEST__: true }, // enables probe during tests
+  plugins: [probeDirective.vite()],
+})
+```
+
+Then in your code:
+
+```ts
+export class MyService {
+  async doStuff(n: number) {
+    const mid = n * 2
+    // #probe('mid', mid) // only evaluated in tests
+
+    await new Promise(r => setTimeout(r, 5))
+
+    const done = mid + 1
+    // #probe('done', done) // only evaluated in tests
+    return done
+  }
+}
+```
+
+By default `#probe` directive is transformed to `__PROBE__('mid', mid)` at build time, where `__PROBE__` is a named import for `probeEmit`.
+
+You can configure the transformation with the `probeDirective` plugin:
+
+```ts
+import { defineConfig } from 'vitest/config'
+import { probeDirective } from 'vitest-probe/directive'
+
+export default defineConfig({
+  test: { environment: 'node' },
+  define: { __TEST__: true }, // enables probe during tests
+  plugins: [probeDirective.vite({
+    probeIdent: '__PROBE_EMIT__', //code will be transformed to __PROBE_EMIT__('foo', bar)
+    directive: '#observe', // parser will look for #observe('foo', bar)
+    include: 'src/controllers',
+    exclude: 'src/controllers/health',
+    keepDefaultExcludes: false, //dont exclude node_modules and virtual modules, defaults to true
+  })],
+})
 ```
 
 ---
